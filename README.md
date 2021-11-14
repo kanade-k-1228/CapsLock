@@ -8,9 +8,7 @@ CapsLock を 修飾キー として使うための設定
 
 参考サイト : [WindowsでCapsLockをF13に変更する](https://tex2e.github.io/blog/keyboard/win-keymap-caps-to-ctrl)
 
-## 2. AutoHotkey をインストール
-
-[AutoHotkey](https://www.autohotkey.com/) 
+## 2. [AutoHotkey](https://www.autohotkey.com/) をインストール
 
 インストールするコンポーネントを選択する画面で、`Script Compiler` を選択
 
@@ -19,3 +17,6 @@ CapsLock を 修飾キー として使うための設定
 `Ahk2Exe.exe /in F13.ahk /out F13.exe`
 
 ## 4. スタートアップに登録
+
+`Win + R` → `shell:startup` を実行し、出てきたフォルダに `F13.exe` を移動
+
