@@ -48,3 +48,4 @@ F13 & q::Send,{Blind}!``       ; Change IME
 F13 & Tab::Send,{Blind}^{PgDn} ; Switch Tab
 F13 & t::Send,{Blind}^t        ; New Tab (Chrome)
 F13 & e::Send,{Blind}^+e       ; Exproler (VS Code)
+F13 & F5::Send,{Blind}+F5      ; Run Without Debug (VS Code)
