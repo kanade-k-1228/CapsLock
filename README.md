@@ -1,6 +1,6 @@
 # CapsLock
 
-CapsLock を 修飾キー として使うための設定
+CapsLock を 修飾キー として使うための設定方法
 
 1. `map_capslock_to_f13.reg` を実行
     - Windows のレジストリを書き換える
