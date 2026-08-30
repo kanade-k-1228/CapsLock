@@ -1,0 +1,29 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    paths: ["F13.ahk"]
+  pull_request:
+    paths: ["F13.ahk"]
+  workflow_dispatch:
+
+jobs:
+  compile:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install AutoHotkey
+        run: choco install autohotkey --version=1.1.37.02 -y
+
+      - name: Compile F13.ahk to F13.exe
+        run: |
+          & "C:\Program Files\AutoHotkey\Compiler\Ahk2Exe.exe" /in F13.ahk /out F13.exe
+        shell: pwsh
+
+      - name: Upload F13.exe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: F13.exe
+          path: F13.exe
