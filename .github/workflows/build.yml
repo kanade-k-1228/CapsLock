@@ -21,7 +21,7 @@ jobs:
           AHK_ZIP: AutoHotkey_1.1.37.02.zip
           AHK_SHA256: 6F3663F7CDD25063C8C8728F5D9B07813CED8780522FD1F124BA539E2854215F
           AHK2EXE_TAG: Ahk2Exe1.1.37.02a2
-          AHK2EXE_ZIP: Ahk2Exe.zip
+          AHK2EXE_ZIP: Ahk2Exe1.1.37.02a2.zip
           AHK2EXE_SHA256: C29B8C3A5124850D79FC9E66E2CA79677C377D7F31631AD3022BA159C5D9E3BE
         run: |
           gh release download $env:AHK_TAG -R AutoHotkey/AutoHotkey -p $env:AHK_ZIP -D dl/ahk
