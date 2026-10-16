@@ -19,10 +19,21 @@ jobs:
 
       - name: Compile F13.ahk to F13.exe
         run: |
-          $ahk2exe = "C:\Program Files\AutoHotkey\Compiler\Ahk2Exe.exe"
-          if (-not (Test-Path $ahk2exe)) { throw "Ahk2Exe not found: $ahk2exe" }
-          $p = Start-Process -FilePath $ahk2exe -ArgumentList '/in', 'F13.ahk', '/out', 'F13.exe' -Wait -PassThru
-          if ($p.ExitCode -ne 0 -or -not (Test-Path F13.exe)) { throw "Compile failed (exit $($p.ExitCode))" }
+          $roots = @("$env:ProgramFiles\AutoHotkey", "${env:ProgramFiles(x86)}\AutoHotkey", "$env:ChocolateyInstall\lib")
+          $ahk2exe = Get-ChildItem -Path $roots -Filter Ahk2Exe.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $ahk2exe) {
+            Write-Output "::error::Ahk2Exe.exe not found under: $($roots -join ', ')"
+            exit 1
+          }
+          Write-Output "::notice::Using $($ahk2exe.FullName)"
+          $out = & $ahk2exe.FullName /in F13.ahk /out F13.exe /silent verbose 2>&1 | Out-String
+          $code = $LASTEXITCODE
+          Write-Output $out
+          if ($code -ne 0 -or -not (Test-Path F13.exe)) {
+            $msg = ($out -replace "`r?`n", ' | ').Trim()
+            Write-Output "::error::Ahk2Exe failed (exit $code): $msg"
+            exit 1
+          }
         shell: pwsh
 
       - name: Upload F13.exe artifact
