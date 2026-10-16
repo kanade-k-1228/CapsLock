@@ -14,19 +14,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install AutoHotkey
-        run: choco install autohotkey --version=1.1.37.1 -y --no-progress
+      - name: Download AutoHotkey v1 and Ahk2Exe
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v1.1.37.02 -R AutoHotkey/AutoHotkey -p "AutoHotkey_1.1.37.02.zip" -D dl
+          gh release download -R AutoHotkey/Ahk2Exe -p "Ahk2Exe*.zip" -D dl
+          Expand-Archive dl\AutoHotkey_1.1.37.02.zip -DestinationPath ahk
+          Get-ChildItem dl -Filter "Ahk2Exe*.zip" | ForEach-Object { Expand-Archive $_.FullName -DestinationPath ahk2exe }
+        shell: pwsh
 
       - name: Compile F13.ahk to F13.exe
         run: |
-          $roots = @("$env:ProgramFiles\AutoHotkey", "${env:ProgramFiles(x86)}\AutoHotkey", "$env:ChocolateyInstall\lib")
-          $ahk2exe = Get-ChildItem -Path $roots -Filter Ahk2Exe.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-          if (-not $ahk2exe) {
-            Write-Output "::error::Ahk2Exe.exe not found under: $($roots -join ', ')"
+          $ahk2exe = Get-ChildItem ahk2exe -Filter Ahk2Exe.exe -Recurse | Select-Object -First 1
+          $base = Get-ChildItem ahk -Filter AutoHotkeyU64.exe -Recurse | Select-Object -First 1
+          if (-not $ahk2exe -or -not $base) {
+            $files = (Get-ChildItem ahk, ahk2exe -Recurse -File | ForEach-Object Name) -join ', '
+            Write-Output "::error::Ahk2Exe or base not found. Files: $files"
             exit 1
           }
-          Write-Output "::notice::Using $($ahk2exe.FullName)"
-          $out = & $ahk2exe.FullName /in F13.ahk /out F13.exe /silent verbose 2>&1 | Out-String
+          $out = & $ahk2exe.FullName /in F13.ahk /out F13.exe /base $base.FullName /silent verbose 2>&1 | Out-String
           $code = $LASTEXITCODE
           Write-Output $out
           if ($code -ne 0 -or -not (Test-Path F13.exe)) {
