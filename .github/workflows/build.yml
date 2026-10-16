@@ -3,27 +3,66 @@ name: Build
 on:
   push:
     branches: [main]
-    paths: ["F13.ahk"]
+    paths: ["F13.ahk", ".github/workflows/build.yml"]
   pull_request:
-    paths: ["F13.ahk"]
+    paths: ["F13.ahk", ".github/workflows/build.yml"]
   workflow_dispatch:
 
 jobs:
   compile:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Install AutoHotkey
-        run: choco install autohotkey --version=1.1.37.02 -y
+      - name: Download AutoHotkey v1 and Ahk2Exe
+        env:
+          GH_TOKEN: ${{ github.token }}
+          AHK_TAG: v1.1.37.02
+          AHK_ZIP: AutoHotkey_1.1.37.02.zip
+          AHK_SHA256: 6F3663F7CDD25063C8C8728F5D9B07813CED8780522FD1F124BA539E2854215F
+          AHK2EXE_TAG: Ahk2Exe1.1.37.02a2
+          AHK2EXE_ZIP: Ahk2Exe1.1.37.02a2.zip
+          AHK2EXE_SHA256: C29B8C3A5124850D79FC9E66E2CA79677C377D7F31631AD3022BA159C5D9E3BE
+        run: |
+          gh release download $env:AHK_TAG -R AutoHotkey/AutoHotkey -p $env:AHK_ZIP -D dl/ahk
+          gh release download $env:AHK2EXE_TAG -R AutoHotkey/Ahk2Exe -p $env:AHK2EXE_ZIP -D dl/ahk2exe
+          $checks = @(
+            @{ Path = "dl/ahk/$env:AHK_ZIP"; Expected = $env:AHK_SHA256 },
+            @{ Path = "dl/ahk2exe/$env:AHK2EXE_ZIP"; Expected = $env:AHK2EXE_SHA256 }
+          )
+          foreach ($c in $checks) {
+            $actual = (Get-FileHash -Algorithm SHA256 $c.Path).Hash
+            if ($actual -ne $c.Expected) {
+              Write-Output "::error::SHA256 mismatch for $($c.Path): expected $($c.Expected), got $actual"
+              exit 1
+            }
+          }
+          Expand-Archive "dl/ahk/$env:AHK_ZIP" -DestinationPath ahk
+          Expand-Archive "dl/ahk2exe/$env:AHK2EXE_ZIP" -DestinationPath ahk2exe
+        shell: pwsh
 
       - name: Compile F13.ahk to F13.exe
         run: |
-          & "C:\Program Files\AutoHotkey\Compiler\Ahk2Exe.exe" /in F13.ahk /out F13.exe
+          $ahk2exe = Get-ChildItem ahk2exe -Filter Ahk2Exe.exe -Recurse | Select-Object -First 1
+          $base = Get-ChildItem ahk -Filter AutoHotkeyU64.exe -Recurse | Select-Object -First 1
+          if (-not $ahk2exe -or -not $base) {
+            $files = (Get-ChildItem ahk, ahk2exe -Recurse -File | ForEach-Object Name) -join ', '
+            Write-Output "::error::Ahk2Exe or base not found. Files: $files"
+            exit 1
+          }
+          $out = & $ahk2exe.FullName /in F13.ahk /out F13.exe /base $base.FullName /silent verbose 2>&1 | Out-String
+          $code = $LASTEXITCODE
+          Write-Output $out
+          if ($code -ne 0 -or -not (Test-Path F13.exe)) {
+            $msg = ($out -replace "`r?`n", ' | ').Trim()
+            Write-Output "::error::Ahk2Exe failed (exit $code): $msg"
+            exit 1
+          }
         shell: pwsh
 
       - name: Upload F13.exe artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: F13.exe
           path: F13.exe
+          if-no-files-found: error
