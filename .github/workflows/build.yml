@@ -17,11 +17,28 @@ jobs:
       - name: Download AutoHotkey v1 and Ahk2Exe
         env:
           GH_TOKEN: ${{ github.token }}
+          AHK_TAG: v1.1.37.02
+          AHK_ZIP: AutoHotkey_1.1.37.02.zip
+          AHK_SHA256: 6F3663F7CDD25063C8C8728F5D9B07813CED8780522FD1F124BA539E2854215F
+          AHK2EXE_TAG: Ahk2Exe1.1.37.02a2
+          AHK2EXE_ZIP: Ahk2Exe.zip
+          AHK2EXE_SHA256: C29B8C3A5124850D79FC9E66E2CA79677C377D7F31631AD3022BA159C5D9E3BE
         run: |
-          gh release download v1.1.37.02 -R AutoHotkey/AutoHotkey -p "AutoHotkey_1.1.37.02.zip" -D dl
-          gh release download -R AutoHotkey/Ahk2Exe -p "Ahk2Exe*.zip" -D dl
-          Expand-Archive dl\AutoHotkey_1.1.37.02.zip -DestinationPath ahk
-          Get-ChildItem dl -Filter "Ahk2Exe*.zip" | ForEach-Object { Expand-Archive $_.FullName -DestinationPath ahk2exe }
+          gh release download $env:AHK_TAG -R AutoHotkey/AutoHotkey -p $env:AHK_ZIP -D dl/ahk
+          gh release download $env:AHK2EXE_TAG -R AutoHotkey/Ahk2Exe -p $env:AHK2EXE_ZIP -D dl/ahk2exe
+          $checks = @(
+            @{ Path = "dl/ahk/$env:AHK_ZIP"; Expected = $env:AHK_SHA256 },
+            @{ Path = "dl/ahk2exe/$env:AHK2EXE_ZIP"; Expected = $env:AHK2EXE_SHA256 }
+          )
+          foreach ($c in $checks) {
+            $actual = (Get-FileHash -Algorithm SHA256 $c.Path).Hash
+            if ($actual -ne $c.Expected) {
+              Write-Output "::error::SHA256 mismatch for $($c.Path): expected $($c.Expected), got $actual"
+              exit 1
+            }
+          }
+          Expand-Archive "dl/ahk/$env:AHK_ZIP" -DestinationPath ahk
+          Expand-Archive "dl/ahk2exe/$env:AHK2EXE_ZIP" -DestinationPath ahk2exe
         shell: pwsh
 
       - name: Compile F13.ahk to F13.exe
