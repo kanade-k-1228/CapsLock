@@ -3,9 +3,9 @@ name: Build
 on:
   push:
     branches: [main]
-    paths: ["F13.ahk"]
+    paths: ["F13.ahk", ".github/workflows/build.yml"]
   pull_request:
-    paths: ["F13.ahk"]
+    paths: ["F13.ahk", ".github/workflows/build.yml"]
   workflow_dispatch:
 
 jobs:
@@ -15,11 +15,14 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install AutoHotkey
-        run: choco install autohotkey --version=1.1.37.02 -y
+        run: choco install autohotkey --version=1.1.37.1 -y --no-progress
 
       - name: Compile F13.ahk to F13.exe
         run: |
-          & "C:\Program Files\AutoHotkey\Compiler\Ahk2Exe.exe" /in F13.ahk /out F13.exe
+          $ahk2exe = "C:\Program Files\AutoHotkey\Compiler\Ahk2Exe.exe"
+          if (-not (Test-Path $ahk2exe)) { throw "Ahk2Exe not found: $ahk2exe" }
+          $p = Start-Process -FilePath $ahk2exe -ArgumentList '/in', 'F13.ahk', '/out', 'F13.exe' -Wait -PassThru
+          if ($p.ExitCode -ne 0 -or -not (Test-Path F13.exe)) { throw "Compile failed (exit $($p.ExitCode))" }
         shell: pwsh
 
       - name: Upload F13.exe artifact
@@ -27,3 +30,4 @@ jobs:
         with:
           name: F13.exe
           path: F13.exe
+          if-no-files-found: error
