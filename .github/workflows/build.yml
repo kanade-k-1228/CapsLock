@@ -12,7 +12,7 @@ jobs:
   compile:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Download AutoHotkey v1 and Ahk2Exe
         env:
@@ -44,7 +44,7 @@ jobs:
         shell: pwsh
 
       - name: Upload F13.exe artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: F13.exe
           path: F13.exe
